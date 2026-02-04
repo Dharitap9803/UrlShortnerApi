@@ -1,0 +1,3 @@
+URL Shortener API is a backend service that converts long URLs into compact, unique short links and efficiently redirects users to the original destination. The system tracks click counts for each shortened URL and stores mappings using optimized database indexing for fast lookups.
+
+This project demonstrates backend fundamentals such as unique ID generation, RESTful API design, redirect handling, and performance-focused database operations commonly used in production-grade systems.
