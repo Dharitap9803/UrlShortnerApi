@@ -2,7 +2,7 @@ const express = require("express");
 const URL = require('./models/url');
 const { connectToMongoDB } = require('./connect');
 const urlRoute = require("./routes/url");
-
+const authRoute = require("./routes/auth");
 const app = express();
 const PORT = 8001;
 
@@ -11,6 +11,8 @@ connectToMongoDB('mongodb://localhost:27017/urlShortenerDB')
 
 app.use(express.json());
 app.use("/url", urlRoute);
+app.use("/auth", authRoute);
+
 
 // Redirect Route
 app.get('/:shortId', async (req, res) => {

@@ -10,9 +10,26 @@ const urlSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    visitHistory: [ { timestamp: {type: Number} }],
+
+    // ✅ ADDED: Which user created this short URL
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
+
+    visitHistory: [
+        { 
+            timestamp: { type: Number },
+
+            // ✅ ADDED
+            ipAddress: { type: String },
+
+            // ✅ ADDED
+            userAgent: { type: String }
+        }
+    ],
 },
-{timestamps: true }
+{ timestamps: true }
 );
 
 const URL = mongoose.model("url", urlSchema);
