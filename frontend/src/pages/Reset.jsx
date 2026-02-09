@@ -8,7 +8,9 @@ export default function Reset() {
       <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Logo */}
         <div className="flex justify-center mb-12">
-          <h1 className="text-4xl font-bold text-orange-500">shortly.</h1>
+          <h1 className="text-4xl font-bold text-blue-700" style={{ fontFamily: "'Pacifico', cursive" }}>
+            Shortly
+          </h1>
         </div>
 
         {/* Confirmation Message */}

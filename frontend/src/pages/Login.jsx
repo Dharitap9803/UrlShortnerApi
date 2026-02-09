@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { app } from "../firebase";
 import googleLogo from "../assets/google.png";
 import logo2 from "../assets/logo2.png";
 
@@ -7,11 +9,46 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const auth = getAuth(app);
 
-  const handleSubmit = (e) => {
+  const loginWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      // User is signed in
+      const user = result.user;
+      console.log("User signed in with Google:", user);
+
+      // Store user token in localStorage
+      const token = await user.getIdToken();
+      localStorage.setItem("token", token);
+
+      // Redirect to LinkDetail page after successful login
+      navigate("/links/:id");
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
+      alert("Failed to sign in with Google. Please try again.");
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add your login logic here
-    console.log("Email:", email, "Password:", password);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // User is signed in
+      const user = userCredential.user;
+      console.log("User signed in:", user);
+
+      // Store user token in localStorage
+      const token = await user.getIdToken();
+      localStorage.setItem("token", token);
+
+      // Redirect to LinkDetail page after successful login
+      navigate("/links/:id");
+    } catch (error) {
+      console.error("Error signing in:", error);
+      alert("Failed to sign in. Please check your email and password.");
+    }
   };
 
   return (
@@ -19,9 +56,12 @@ export default function Login() {
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="py-12">
-          <h1 className="text-4xl font-bold text-orange-500">shortly.</h1>
-        </div>
+       <div className="py-12">
+  <h1 className="text-4xl font-bold text-blue-700" style={{ fontFamily: "'Pacifico', cursive" }}>
+    Shortly
+  </h1>
+</div>
+
 
         {/* Content */}
         <div className="flex flex-col md:flex-row">
@@ -36,7 +76,10 @@ export default function Login() {
             </p>
 
             {/* Google Login Button */}
-            <button className="w-full flex items-center justify-center border border-gray-300 rounded-lg py-3 px-4 mb-6 hover:bg-gray-50">
+            <button
+              onClick={loginWithGoogle}
+              className="w-full flex items-center justify-center border border-gray-300 rounded-lg py-3 px-4 mb-6 hover:bg-gray-50"
+            >
               <img src={googleLogo} alt="Google Logo" className="w-5 h-5 mr-2"/>
               <span className="text-gray-700">Continue with Google</span>
             </button>
@@ -78,9 +121,12 @@ export default function Login() {
               </div>
 
               <div className="mb-6 text-right">
-                <button type="button"  onClick={() => navigate("/forgetpassword")}
-                className="text-blue-600 hover:underline text-sm bg-transparent border-none p-0 cursor-pointer">
-                Forgot your password?
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgetpassword")}
+                  className="text-blue-600 hover:underline text-sm bg-transparent border-none p-0 cursor-pointer"
+                >
+                  Forgot your password?
                 </button>
               </div>
 

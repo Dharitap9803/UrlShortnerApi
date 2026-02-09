@@ -6,6 +6,11 @@ import Dashboard from './pages/Dashboard';
 import LinkDetails from './pages/LinkDetails';
 import ForgetPassword from './pages/ForgetPassword';
 import Reset from './pages/Reset';
+import {getDatabase} from "firebase/database";
+import { app } from "./firebase";
+import Links from './pages/Links';
+
+
 
 export default function App() {
   return (
@@ -17,6 +22,9 @@ export default function App() {
       <Route path="/links/:id" element={<LinkDetails />} />
       <Route path="/forgetpassword" element={<ForgetPassword />} />
       <Route path="/reset" element={<Reset />} />
+      <Route path="/links" element={<Links />} />
+      <Route path="/home" element={<Home />} />
+
 
     </Routes>
   );
