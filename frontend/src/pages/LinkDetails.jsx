@@ -193,7 +193,7 @@ export default function LinkDetail() {
                 <h1 className="text-2xl font-bold text-gray-900">Shortly Links</h1>
               </div>
               <div className="flex items-center space-x-4">
-                <Link to="/create" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                <Link to="/links" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
                   Create new
                 </Link>
               </div>
