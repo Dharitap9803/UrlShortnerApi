@@ -4,26 +4,67 @@ import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopu
 import { app } from "../firebase";
 import googleLogo from "../assets/google.png";
 import logo2 from "../assets/logo2.png";
+import eyeOpen from "../assets/eyeopen.png";
+import eyeClosed from "../assets/eyeclosed.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [errors, setErrors] = useState({
+    hasLetter: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+    hasMinLength: false,
+    emailEmpty: false,
+    passwordEmpty: false
+  });
   const navigate = useNavigate();
   const auth = getAuth(app);
+
+  const validatePassword = (pwd) => {
+    const hasLetter = /[a-zA-Z]/.test(pwd);
+    const hasNumber = /\d/.test(pwd);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+    const hasMinLength = pwd.length >= 9;
+
+    setErrors(prev => ({
+      ...prev,
+      hasLetter,
+      hasNumber,
+      hasSpecialChar,
+      hasMinLength,
+      passwordEmpty: pwd.length === 0
+    }));
+
+    return { hasLetter, hasNumber, hasSpecialChar, hasMinLength };
+  };
+
+  const validateForm = () => {
+    const isEmailEmpty = email.length === 0;
+    const isPasswordEmpty = password.length === 0;
+
+    setErrors(prev => ({
+      ...prev,
+      emailEmpty: isEmailEmpty,
+      passwordEmpty: isPasswordEmpty
+    }));
+
+    setTouched(true);
+
+    return !(isEmailEmpty || isPasswordEmpty);
+  };
 
   const loginWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      // User is signed in
       const user = result.user;
       console.log("User signed in with Google:", user);
 
-      // Store user token in localStorage
       const token = await user.getIdToken();
       localStorage.setItem("token", token);
-
-      // Redirect to LinkDetail page after successful login
       navigate("/links/:id");
     } catch (error) {
       console.error("Error signing in with Google:", error);
@@ -33,17 +74,18 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // User is signed in
       const user = userCredential.user;
       console.log("User signed in:", user);
 
-      // Store user token in localStorage
       const token = await user.getIdToken();
       localStorage.setItem("token", token);
-
-      // Redirect to LinkDetail page after successful login
       navigate("/links/:id");
     } catch (error) {
       console.error("Error signing in:", error);
@@ -51,17 +93,20 @@ export default function Login() {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-       <div className="py-12">
-  <h1 className="text-4xl font-bold text-blue-700" style={{ fontFamily: "'Pacifico', cursive" }}>
-    Shortly
-  </h1>
-</div>
-
+        <div className="py-12">
+          <h1 className="text-4xl font-bold text-blue-700" style={{ fontFamily: "'Pacifico', cursive" }}>
+            Shortly
+          </h1>
+        </div>
 
         {/* Content */}
         <div className="flex flex-col md:flex-row">
@@ -100,24 +145,83 @@ export default function Login() {
                   type="email"
                   id="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (touched) {
+                      setErrors(prev => ({
+                        ...prev,
+                        emailEmpty: e.target.value.length === 0
+                      }));
+                    }
+                  }}
+                  className={`w-full px-4 py-3 border ${touched && errors.emailEmpty ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   required
                 />
+                {touched && errors.emailEmpty && (
+                  <p className="text-red-500 text-xs mt-1">Please enter your email address</p>
+                )}
               </div>
 
-              <div className="mb-6">
+              <div className="mb-2 relative">
                 <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
                   Password
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (touched) validatePassword(e.target.value);
+                    }}
+                    onFocus={() => {
+                      if (!touched) {
+                        setTouched(true);
+                        if (password.length > 0) validatePassword(password);
+                      }
+                    }}
+                    className={`w-full px-4 py-3 border ${touched && errors.passwordEmpty ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center bg-blue-50 hover:bg-blue-100 rounded px-2 py-1 border border-blue-200"
+                    style={{ minHeight: '32px', minWidth: '60px' }}
+                  >
+                    {showPassword ? (
+                      <>
+                        <img src={eyeOpen} alt="Hide" className="w-4 h-4 mr-1" />
+                        <span className="text-xs text-blue-600">Hide</span>
+                      </>
+                    ) : (
+                      <>
+                        <img src={eyeClosed} alt="Show" className="w-4 h-4 mr-1" />
+                        <span className="text-xs text-blue-600">Show</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                {touched && errors.passwordEmpty && (
+                  <p className="text-red-500 text-xs mt-1">Please fill in this field.</p>
+                )}
+                {touched && !errors.passwordEmpty && password.length > 0 && (
+                  <div className="mt-2">
+                    <p className={`text-xs ${errors.hasLetter ? 'text-green-500' : 'text-red-500'}`}>
+                      {errors.hasLetter ? '✓' : '✗'} One letter
+                    </p>
+                    <p className={`text-xs ${errors.hasNumber ? 'text-green-500' : 'text-red-500'}`}>
+                      {errors.hasNumber ? '✓' : '✗'} One number
+                    </p>
+                    <p className={`text-xs ${errors.hasSpecialChar ? 'text-green-500' : 'text-red-500'}`}>
+                      {errors.hasSpecialChar ? '✓' : '✗'} One special character
+                    </p>
+                    <p className={`text-xs ${errors.hasMinLength ? 'text-green-500' : 'text-red-500'}`}>
+                      {errors.hasMinLength ? '✓' : '✗'} 9 or more characters
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="mb-6 text-right">
