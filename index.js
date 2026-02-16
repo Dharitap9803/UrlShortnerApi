@@ -2,7 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const fs = require("fs");
 const { connectToMongoDB } = require("./backend/connect");
 const urlRoute = require("./backend/routes/url");
 const authRoute = require("./backend/routes/auth");
@@ -20,54 +19,18 @@ connectToMongoDB(process.env.MONGODB_URI || "mongodb://localhost:27017/urlShorte
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Serve frontend build files (Vite dist folder) - must come before API routes
-// Try multiple possible paths for Render deployment
-const possiblePaths = [
-  path.join(__dirname, "frontend", "dist"),
-  path.join(__dirname, "src", "frontend", "dist"),
-  path.join(process.cwd(), "frontend", "dist"),
-  path.join(process.cwd(), "src", "frontend", "dist")
-];
-
-let frontendDistPath = possiblePaths.find(p => {
-  try {
-    return fs.existsSync(p);
-  } catch {
-    return false;
-  }
-}) || possiblePaths[0]; // Fallback to first path
-
-console.log("Frontend dist path:", frontendDistPath);
-console.log("Dist folder exists:", fs.existsSync(frontendDistPath));
-
-if (!fs.existsSync(frontendDistPath)) {
-  console.error("ERROR: Frontend dist folder not found at:", frontendDistPath);
-  console.error("Current working directory:", process.cwd());
-  console.error("__dirname:", __dirname);
-  console.error("Please ensure 'npm run build' has been executed.");
-}
-
-app.use(express.static(frontendDistPath));
-
 // API Routes
 app.use("/url", urlRoute);
 app.use("/auth", authRoute);
 
-// Redirect route for short URLs (must come before catch-all)
+// Redirect short URL
 app.get("/:shortId", async (req, res) => {
   try {
-    // Skip if it's an API route or static file
-    if (req.path.startsWith("/url") || req.path.startsWith("/auth") || req.path.includes(".")) {
-      return res.status(404).json({ error: "Not found" });
-    }
-
     const { shortId } = req.params;
-    const entry = await URL.findOne({ shortId });
 
+    const entry = await URL.findOne({ shortId });
     if (!entry) {
-      // If no short URL found, serve React app
-      const indexPath = path.join(frontendDistPath, "index.html");
-      return res.sendFile(indexPath);
+      return res.status(404).json({ error: "Short URL not found" });
     }
 
     return res.redirect(entry.redirectURL);
@@ -77,21 +40,17 @@ app.get("/:shortId", async (req, res) => {
   }
 });
 
-// React fallback route - serve index.html for all other routes
-app.get("*", (req, res) => {
-  const indexPath = path.join(frontendDistPath, "index.html");
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error("Error serving index.html:", err);
-      res.status(404).json({ 
-        error: "Frontend build not found. Please ensure the frontend has been built.",
-        path: frontendDistPath
-      });
-    }
-  });
+// ✅ Serve frontend (IMPORTANT FIX)
+const frontendPath = path.join(__dirname, "frontend", "dist");
+
+app.use(express.static(frontendPath));
+
+// Express 5 safe fallback
+app.use((req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
-// Start the server
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running at PORT: ${PORT}`);
 });
