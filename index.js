@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const { connectToMongoDB } = require("./backend/connect");
 const urlRoute = require("./backend/routes/url");
 const authRoute = require("./backend/routes/auth");
@@ -20,7 +21,32 @@ connectToMongoDB(process.env.MONGODB_URI || "mongodb://localhost:27017/urlShorte
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // Serve frontend build files (Vite dist folder) - must come before API routes
-const frontendDistPath = path.join(__dirname, "frontend", "dist");
+// Try multiple possible paths for Render deployment
+const possiblePaths = [
+  path.join(__dirname, "frontend", "dist"),
+  path.join(__dirname, "src", "frontend", "dist"),
+  path.join(process.cwd(), "frontend", "dist"),
+  path.join(process.cwd(), "src", "frontend", "dist")
+];
+
+let frontendDistPath = possiblePaths.find(p => {
+  try {
+    return fs.existsSync(p);
+  } catch {
+    return false;
+  }
+}) || possiblePaths[0]; // Fallback to first path
+
+console.log("Frontend dist path:", frontendDistPath);
+console.log("Dist folder exists:", fs.existsSync(frontendDistPath));
+
+if (!fs.existsSync(frontendDistPath)) {
+  console.error("ERROR: Frontend dist folder not found at:", frontendDistPath);
+  console.error("Current working directory:", process.cwd());
+  console.error("__dirname:", __dirname);
+  console.error("Please ensure 'npm run build' has been executed.");
+}
+
 app.use(express.static(frontendDistPath));
 
 // API Routes
