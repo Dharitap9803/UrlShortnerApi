@@ -41,7 +41,14 @@ async function handleLogin(req, res) {
     expiresIn: "1d",
   });
 
-  return res.json({ token });
+  return res.json({
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    },
+  });
 }
 
 module.exports = {

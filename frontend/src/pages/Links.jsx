@@ -1,23 +1,30 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { UrlAPI } from "../api";
+
+const BACKEND_BASE = "http://localhost:8001";
 
 export default function CreateLink() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [destinationUrl, setDestinationUrl] = useState("https://example.com/my-long-url");
+  const [destinationUrl, setDestinationUrl] = useState(location.state?.url || "");
   const [shortDomain, setShortDomain] = useState("bit.ly");
   const [backHalf, setBackHalf] = useState("");
   const [title, setTitle] = useState("");
   const [addToPage, setAddToPage] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // User profile data
-  const user = {
+  // User profile data (default, overridden from localStorage)
+  const [user, setUser] = useState({
     name: "Dharita Patel",
     email: "dharita2003@gmail.com",
     accountId: "o_68svc686ej",
     accountType: "Free account"
-  };
+  });
 
   const profileDropdownRef = useRef(null);
 
@@ -32,7 +39,27 @@ export default function CreateLink() {
     setShowProfileDropdown(!showProfileDropdown);
   };
 
-  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    if (location.state?.url) setDestinationUrl(location.state.url);
+  }, [location.state?.url]);
+
+  // Load user from localStorage if available
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const stored = JSON.parse(raw);
+        setUser((prev) => ({
+          ...prev,
+          name: stored.name || prev.name,
+          email: stored.email || prev.email,
+          accountId: stored.id || prev.accountId,
+        }));
+      }
+    } catch {
+      // ignore parsing errors
+    }
+  }, []);
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
@@ -46,35 +73,60 @@ export default function CreateLink() {
     };
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted");
+    setError("");
+    let urlToShorten = destinationUrl.trim();
+    if (!urlToShorten) {
+      setError("Please enter a destination URL.");
+      return;
+    }
+    if (!urlToShorten.startsWith("http://") && !urlToShorten.startsWith("https://")) {
+      urlToShorten = `https://${urlToShorten}`;
+    }
+    try {
+      setLoading(true);
+      const { data } = await UrlAPI.shorten(urlToShorten);
+      navigate(`/link-details`, { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || "Failed to create short link.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* User Profile Header */}
-      <header className="bg-white shadow-sm p-4 flex justify-end items-center relative">
+      {/* Top bar - match LinkDetails */}
+      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link to="/home" className="flex-shrink-0 w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">
+            S
+          </Link>
+          <div className="hidden sm:block flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+        {/* Right side: Upgrade, Help, profile (reuse existing dropdown state) */}
         <div className="flex items-center space-x-4 relative" ref={profileDropdownRef}>
-          {/* Upgrade Button - Outside dropdown */}
-          <Link to="/upgrade" className="bg-teal-600 text-white text-sm px-3 py-1 rounded hover:bg-teal-700 mr-4">
+          <Link to="/upgrade" className="bg-emerald-600 text-white text-sm px-3 py-1.5 rounded-md hover:bg-emerald-700">
             Upgrade
           </Link>
-
-          {/* Help Button - Outside dropdown */}
-          <button className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 mr-2">
+          <button className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-medium hover:bg-blue-700">
             ?
           </button>
-
-          {/* Profile Button - Triggers dropdown */}
           <button
             onClick={toggleProfileDropdown}
-            className="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-lg hover:bg-gray-200 focus:outline-none"
+            className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200 focus:outline-none"
           >
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
               {user.name.split(' ').map(n => n[0]).join('')}
             </div>
-            <span className="text-sm font-medium text-gray-800">{user.name}</span>
+            <span className="hidden sm:inline text-sm font-medium text-gray-800">{user.name}</span>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
@@ -120,53 +172,123 @@ export default function CreateLink() {
         </div>
       </header>
 
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <div className={`bg-white shadow-md ${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300`}>
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <button onClick={toggleSidebar} className="p-2 rounded-md text-gray-500 hover:bg-gray-100 mr-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-                <div className="py-4">
-                  <h1 className="text-2xl font-bold text-blue-700" style={{ fontFamily: "'Pacifico', cursive" }}>
-                    Shortly
-                  </h1>
-                </div>
-              </div>
-            </div>
-          </div>
-          <nav className="mt-6 px-4">
-            <Link
-              to="/home"
-              className={`flex items-center py-2 px-3 rounded-lg mb-2 ${!isSidebarOpen ? 'justify-center' : ''}`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-              </svg>
-              {isSidebarOpen && <span className="ml-3">Home</span>}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar - copied from LinkDetails */}
+        <aside
+          className={`bg-white border-r border-gray-200 flex flex-col items-center py-4 transition-all duration-200 ${
+            isSidebarOpen ? "w-56" : "w-16"
+          }`}
+        >
+          <div className="flex flex-col items-center gap-4 w-full">
+            <Link to="/home" className="flex-shrink-0 w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">
+              S
             </Link>
-            <div className="border-t border-gray-200 my-2"></div>
+            <button onClick={toggleSidebar} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" aria-label="Expand sidebar">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
             <Link
               to="/links"
-              className={`flex items-center py-2 px-3 text-blue-600 bg-blue-50 rounded-lg mb-2 ${!isSidebarOpen ? 'justify-center' : ''}`}
+              className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 flex-shrink-0"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              {isSidebarOpen && <span className="ml-3">Links</span>}
             </Link>
+          </div>
+          <nav className="mt-6 flex flex-col items-center gap-1 w-full">
+            <Link
+              to="/home"
+              className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 ${
+                !isSidebarOpen ? "mx-auto" : "w-full px-3"
+              } text-gray-600 hover:bg-gray-100`}
+              title="Home"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              {isSidebarOpen && <span className="ml-2 text-sm">Home</span>}
+            </Link>
+            <Link
+              to="/link-details"
+              className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 ${
+                !isSidebarOpen ? "mx-auto bg-blue-50 text-blue-600" : "w-full px-3 bg-blue-50 text-blue-600"
+              }`}
+              title="Links"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              {isSidebarOpen && <span className="ml-2 text-sm font-medium">Links</span>}
+            </Link>
+            <button
+              className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 ${
+                !isSidebarOpen ? "mx-auto" : "w-full px-3"
+              } text-gray-600 hover:bg-gray-100`}
+              title="QR codes"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1v-2a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+              {isSidebarOpen && <span className="ml-2 text-sm">QR codes</span>}
+            </button>
+            <button
+              className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 ${
+                !isSidebarOpen ? "mx-auto" : "w-full px-3"
+              } text-gray-600 hover:bg-gray-100`}
+              title="Custom links"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {isSidebarOpen && <span className="ml-2 text-sm">Custom links</span>}
+            </button>
+            <button
+              className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 ${
+                !isSidebarOpen ? "mx-auto" : "w-full px-3"
+              } text-gray-600 hover:bg-gray-100`}
+              title="Analytics"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              {isSidebarOpen && <span className="ml-2 text-sm">Analytics</span>}
+            </button>
+            <button
+              className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 ${
+                !isSidebarOpen ? "mx-auto" : "w-full px-3"
+              } text-gray-600 hover:bg-gray-100`}
+              title="Integrations"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+              </svg>
+              {isSidebarOpen && <span className="ml-2 text-sm">Integrations</span>}
+            </button>
+            <button
+              className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 mt-4 ${
+                !isSidebarOpen ? "mx-auto" : "w-full px-3"
+              } text-gray-600 hover:bg-gray-100`}
+              title="Settings"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {isSidebarOpen && <span className="ml-2 text-sm">Settings</span>}
+            </button>
           </nav>
-        </div>
+        </aside>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0 bg-gray-50">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
             <h1 className="text-3xl font-bold text-gray-900 mb-8">Create a new link</h1>
 
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">{error}</div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Link Details Section */}
               <div className="bg-white rounded-lg shadow-sm p-6">
@@ -343,9 +465,10 @@ export default function CreateLink() {
                 </Link>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  disabled={loading}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-70"
                 >
-                  Create your link
+                  {loading ? "Creating..." : "Create your link"}
                 </button>
               </div>
             </form>

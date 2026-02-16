@@ -63,7 +63,7 @@ export const UrlAPI = {
   shorten: (longUrl) => API.post('/url', { url: longUrl }),
   getUserUrls: () => API.get('/url/user'),
   getUrlAnalytics: (shortId) => API.get(`/url/${shortId}`),
-  getAllUrls: () => API.get('/url'), // If you implement this endpoint
+  updateLink: (shortId, data) => API.patch(`/url/${shortId}`, data),
 };
 
 export default API;

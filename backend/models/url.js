@@ -23,6 +23,8 @@ const urlSchema = new mongoose.Schema({
             city: { type: String },
         }
     ],
+    title: { type: String, default: "" },
+    tags: [{ type: String }],
 }, { timestamps: true });
 
 const URL = mongoose.model("URL", urlSchema);

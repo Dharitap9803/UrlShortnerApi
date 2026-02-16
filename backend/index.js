@@ -1,9 +1,10 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const axios = require("axios");
 const { connectToMongoDB } = require("./connect");
 const urlRoute = require("./routes/url");
 const authRoute = require("./routes/auth");
+const URL = require("./models/url");
 
 const PORT = 8001;
 const app = express();
@@ -12,8 +13,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database connection
-connectToMongoDB("mongodb://localhost:27017/urlShortenerDB")
+// Database connection (uses MONGODB_URI from .env, fallback to local)
+connectToMongoDB(process.env.MONGODB_URI || "mongodb://localhost:27017/urlShortenerDB")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 

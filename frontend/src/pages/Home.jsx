@@ -2,48 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
-  const [longUrl, setLongUrl] = useState("https://example.com/my-long-url");
-  const [shortUrl, setShortUrl] = useState("");
-  const [isShortened, setIsShortened] = useState(false);
+  const [longUrl, setLongUrl] = useState("");
   const [showWarning, setShowWarning] = useState(false);
+  const [authWarning, setAuthWarning] = useState(false);
   const [language, setLanguage] = useState('en');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
-
-  // Simple API helper function
-  const apiRequest = async (endpoint, method = 'GET', data = null) => {
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const config = {
-      method,
-      headers,
-    };
-
-    if (data) {
-      config.body = JSON.stringify(data);
-    }
-
-    try {
-      const response = await fetch(`http://localhost:8001${endpoint}`, config);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Request failed');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("API Error:", error);
-      throw error;
-    }
-  };
 
   const translations = {
     en: {
@@ -80,35 +44,27 @@ const Home = () => {
 
   const t = translations[language];
 
-  const handleShorten = async (e) => {
+  const handleShorten = (e) => {
     e.preventDefault();
+    setAuthWarning(false);
+    setShowWarning(false);
+
     if (!longUrl.trim()) {
       setShowWarning(true);
-      setIsShortened(false);
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Format URL properly
-      let urlToShorten = longUrl.trim();
-      if (!urlToShorten.startsWith('http://') && !urlToShorten.startsWith('https://')) {
-        urlToShorten = `https://${urlToShorten}`;
-      }
-
-      const response = await apiRequest('/url', 'POST', { url: urlToShorten });
-      setShortUrl(`http://localhost:8001/${response.id}`);
-      setIsShortened(true);
-      setShowWarning(false);
-    } catch (err) {
-      console.error("Error shortening URL:", err);
-      setError(err.message || "Failed to shorten URL. Please try again.");
-      setShowWarning(true);
-    } finally {
-      setLoading(false);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setAuthWarning(true);
+      return;
     }
+
+    let urlToShorten = longUrl.trim();
+    if (!urlToShorten.startsWith("http://") && !urlToShorten.startsWith("https://")) {
+      urlToShorten = `https://${urlToShorten}`;
+    }
+    navigate("/links", { state: { url: urlToShorten } });
   };
 
   return (
@@ -176,48 +132,36 @@ const Home = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{t.shortenLink}</h2>
               <p className="text-gray-600 mb-8">{t.noCreditCard}</p>
 
-              {error && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">{error}</div>}
-
-              <form onSubmit={handleShorten} className="space-y-6">
-                <div>
-                  <label htmlFor="destinationUrl" className="block text-sm font-medium text-gray-700 mb-2">{t.pasteUrl}</label>
-                  <input type="url" id="destinationUrl" value={longUrl} onChange={(e) => {setLongUrl(e.target.value); setShowWarning(false); setError(null);}}
-                    placeholder="https://example.com/my-long-url" className={`w-full px-6 py-4 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200 ${showWarning ? "border-red-500" : "border-blue-300"}`} style={{ minWidth: '500px' }} />
-                  {showWarning && <p className="mt-2 text-sm text-red-600">{t.pasteUrl} (valid URL required)</p>}
-                </div>
-
-                <button type="submit" disabled={loading} className={`w-full bg-blue-600 text-white py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center transition-all duration-200 transform hover:scale-[1.01] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                  {loading ? <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </> : <>
-                    {t.getStarted}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </>}
-                </button>
-              </form>
-
-              {isShortened && (
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">{t.yourLink}</p>
-                      <a href={shortUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium break-all">{shortUrl}</a>
-                    </div>
-                    <button onClick={() => navigator.clipboard.writeText(shortUrl)} className="text-gray-500 hover:text-blue-600 transition-colors duration-200" title={t.copy}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                      </svg>
+              {authWarning && (
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
+                  <p className="font-medium">Please log in or sign up to shorten links.</p>
+                  <p className="text-sm mt-1">You need an account to create short links. Each user has their own links and link details.</p>
+                  <div className="mt-3 flex gap-3">
+                    <button type="button" onClick={() => navigate("/login")} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                      Log in
+                    </button>
+                    <button type="button" onClick={() => navigate("/signup")} className="px-4 py-2 border border-amber-600 text-amber-800 rounded-lg text-sm font-medium hover:bg-amber-100">
+                      Sign up
                     </button>
                   </div>
                 </div>
               )}
+
+              <form onSubmit={handleShorten} className="space-y-6">
+                <div>
+                  <label htmlFor="destinationUrl" className="block text-sm font-medium text-gray-700 mb-2">{t.pasteUrl}</label>
+                  <input type="url" id="destinationUrl" value={longUrl} onChange={(e) => { setLongUrl(e.target.value); setShowWarning(false); setAuthWarning(false); }}
+                    placeholder="https://example.com/my-long-url" className={`w-full px-6 py-4 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200 ${showWarning ? "border-red-500" : "border-blue-300"}`} style={{ minWidth: '500px' }} />
+                  {showWarning && <p className="mt-2 text-sm text-red-600">Please enter a valid URL.</p>}
+                </div>
+
+                <button type="submit" className="w-full bg-blue-600 text-white py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center transition-all duration-200 transform hover:scale-[1.01]">
+                  {t.getStarted}
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </form>
             </div>
           </div>
         </div>

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { app } from "../firebase";
+import { AuthAPI } from "../api";
 import googleLogo from "../assets/google.png";
 import logo2 from "../assets/logo2.png";
 import eyeOpen from "../assets/eyeopen.png";
@@ -21,7 +20,7 @@ export default function Login() {
     passwordEmpty: false
   });
   const navigate = useNavigate();
-  const auth = getAuth(app);
+  const [submitError, setSubmitError] = useState("");
 
   const validatePassword = (pwd) => {
     const hasLetter = /[a-zA-Z]/.test(pwd);
@@ -57,39 +56,27 @@ export default function Login() {
   };
 
   const loginWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      console.log("User signed in with Google:", user);
-
-      const token = await user.getIdToken();
-      localStorage.setItem("token", token);
-      navigate("/links/:id");
-    } catch (error) {
-      console.error("Error signing in with Google:", error);
-      alert("Failed to sign in with Google. Please try again.");
-    }
+    alert("Google sign-in is not connected to the backend yet. Please use email and password.");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError("");
 
     if (!validateForm()) {
       return;
     }
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      console.log("User signed in:", user);
-
-      const token = await user.getIdToken();
-      localStorage.setItem("token", token);
-      navigate("/links/:id");
+      const { data } = await AuthAPI.login({ email, password });
+      localStorage.setItem("token", data.token);
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+      navigate("/links");
     } catch (error) {
-      console.error("Error signing in:", error);
-      alert("Failed to sign in. Please check your email and password.");
+      const msg = error.response?.data?.error || error.message || "Failed to sign in. Please check your email and password.";
+      setSubmitError(msg);
     }
   };
 
@@ -136,6 +123,9 @@ export default function Login() {
             </div>
 
             {/* Email and Password Form */}
+            {submitError && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">{submitError}</div>
+            )}
             <form onSubmit={handleSubmit}>
               <div className="mb-6">
                 <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">

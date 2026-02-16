@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { app } from "../firebase";
+import { AuthAPI } from "../api";
 import googleLogo from "../assets/google.png";
 import logo from "../assets/logo.png";
 import eyeOpen from "../assets/eyeopen.png"; // Add this icon to your assets
 import eyeClosed from "../assets/eyeclosed.png"; // Add this icon to your assets
 
 export default function Signup() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [errors, setErrors] = useState({
     hasLetter: false,
     hasNumber: false,
@@ -22,7 +23,6 @@ export default function Signup() {
   const [showErrors, setShowErrors] = useState(false);
   const [touched, setTouched] = useState(false);
   const navigate = useNavigate();
-  const auth = getAuth(app);
 
   const validatePassword = (pwd) => {
     const hasLetter = /[a-zA-Z]/.test(pwd);
@@ -68,20 +68,12 @@ export default function Signup() {
   };
 
   const signupWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      console.log("User signed up with Google:", user);
-      navigate("/");
-    } catch (error) {
-      console.error("Error signing up with Google:", error);
-      alert("Failed to sign up with Google. Please try again.");
-    }
+    alert("Google sign-up is not connected to the backend yet. Please use the form below.");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError("");
 
     if (!validateForm()) {
       return;
@@ -92,14 +84,22 @@ export default function Signup() {
       return;
     }
 
+    if (!name.trim()) {
+      setSubmitError("Please enter your name.");
+      return;
+    }
+
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      console.log("User signed up:", user);
-      navigate("/");
+      await AuthAPI.signup({ name: name.trim(), email, password });
+      const { data } = await AuthAPI.login({ email, password });
+      localStorage.setItem("token", data.token);
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+      navigate("/links");
     } catch (error) {
-      console.error("Error signing up:", error);
-      alert("Failed to sign up. Please check your email and password.");
+      const msg = error.response?.data?.error || error.message || "Failed to sign up. Please try again.";
+      setSubmitError(msg);
     }
   };
 
@@ -149,8 +149,25 @@ export default function Signup() {
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
 
+            {submitError && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">{submitError}</div>
+            )}
             {/* Email and Password Form */}
             <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Your name"
+                  required
+                />
+              </div>
               <div className="mb-4">
                 <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
                   Email
