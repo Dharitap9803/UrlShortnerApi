@@ -9,40 +9,42 @@ const Home = () => {
 
   const navigate = useNavigate();
 
-  const translations = {
-    en: {
-      platform: "Platform", solutions: "Solutions", pricing: "Pricing", resources: "Resources",
-      login: "Log in", getQuote: "Get a Quote", signUp: "Sign up Free", heroTitle: "The Bitly Connections Platform",
-      heroDesc: "All the products you need to build brand connections, manage links and QR Codes, and connect with audiences everywhere, in a single unified platform.",
-      getStarted: "Get started for free", shortenLink: "Shorten a long link", noCreditCard: "No credit card required.",
-      pasteUrl: "Paste your long link here", yourLink: "Your shortened link:", copy: "Copy",
-      urlShortener: "URL Shortener", urlDesc: "A comprehensive solution to help make every point of connection between your content and your audience more powerful.",
-      learnMore: "Learn more", footerTitle: "Adopted and loved by millions of users for over a decade", startNow: "Start now",
-      whyBitly: "Why Bitly?", integrations: "Integrations & API", enterprise: "Enterprise Class", pricingFooter: "Pricing",
-      products: "Products", urlShortenerFooter: "URL Shortener", qrCode: "QR Code Generator", barcodes: "2D Barcodes",
-      analytics: "Analytics", pages: "Pages", features: "Features", linkInBio: "Link-in-bio", brandedLinks: "Branded Links",
-      mobileLinks: "Mobile Links", utmCampaigns: "UTM Campaigns", digitalCards: "Digital Business Cards", solutions: "Solutions",
-      retail: "Retail", cpg: "Consumer Packaged Goods", hospitality: "Hospitality", media: "Media & Entertainment",
-      tech: "Tech Software & Hardware", healthcare: "Healthcare", insurance: "Insurance", financial: "Financial Services",
-      professional: "Professional Services", education: "Education", resources: "Resources", blog: "Blog",
-      guides: "Guides & eBooks", videos: "Videos & Webinars", stories: "Customer Stories", gallery: "QR Code Inspiration Gallery",
-      developers: "Developers", apps: "Apps and Integrations", help: "Help Center", trust: "Trust Center",
-      security: "Security Center", browser: "Browser Extension", mobileApp: "Mobile App", legal: "Legal",
-      privacy: "Privacy Policy", cookies: "Cookie Policy", terms: "Terms of Service", acceptableUse: "Acceptable Use Policy",
-      conduct: "Code of Conduct", transparency: "Transparency Report", company: "Company", about: "About Bitly",
-      careers: "Careers", inclusion: "Inclusion at Bitly", partners: "Partners", press: "Press", contact: "Contact",
-      reviews: "Reviews", accessibilityReport: "Accessibility Report", accessibilityStatement: "Accessibility Statement",
-      copyright: "© 2026 Bitly | Handmade in New York City, Berlin, and all over the world."
-    },
-    de: { /* German translations */ },
-    fr: { /* French translations */ },
-    it: { /* Italian translations */ },
-    pt: { /* Portuguese translations */ },
-    es: { /* Spanish translations */ },
-    th: { /* Thai translations */ }
+  const baseEn = {
+    platform: "Platform", solutions: "Solutions", pricing: "Pricing", resources: "Resources",
+    login: "Log in", getQuote: "Get a Quote", signUp: "Sign up Free", heroTitle: "The Bitly Connections Platform",
+    heroDesc: "All the products you need to build brand connections, manage links and QR Codes, and connect with audiences everywhere, in a single unified platform.",
+    getStarted: "Get started for free", shortenLink: "Shorten a long link", noCreditCard: "No credit card required.",
+    pasteUrl: "Paste your long link here", yourLink: "Your shortened link:", copy: "Copy",
+    urlShortener: "URL Shortener", urlDesc: "A comprehensive solution to help make every point of connection between your content and your audience more powerful.",
+    learnMore: "Learn more", footerTitle: "Adopted and loved by millions of users for over a decade", startNow: "Start now",
+    whyBitly: "Why Bitly?", integrations: "Integrations & API", enterprise: "Enterprise Class", pricingFooter: "Pricing",
+    products: "Products", urlShortenerFooter: "URL Shortener", qrCode: "QR Code Generator", barcodes: "2D Barcodes",
+    analytics: "Analytics", pages: "Pages", features: "Features", linkInBio: "Link-in-bio", brandedLinks: "Branded Links",
+    mobileLinks: "Mobile Links", utmCampaigns: "UTM Campaigns", digitalCards: "Digital Business Cards", solutions: "Solutions",
+    retail: "Retail", cpg: "Consumer Packaged Goods", hospitality: "Hospitality", media: "Media & Entertainment",
+    tech: "Tech Software & Hardware", healthcare: "Healthcare", insurance: "Insurance", financial: "Financial Services",
+    professional: "Professional Services", education: "Education", resources: "Resources", blog: "Blog",
+    guides: "Guides & eBooks", videos: "Videos & Webinars", stories: "Customer Stories", gallery: "QR Code Inspiration Gallery",
+    developers: "Developers", apps: "Apps and Integrations", help: "Help Center", trust: "Trust Center",
+    security: "Security Center", browser: "Browser Extension", mobileApp: "Mobile App", legal: "Legal",
+    privacy: "Privacy Policy", cookies: "Cookie Policy", terms: "Terms of Service", acceptableUse: "Acceptable Use Policy",
+    conduct: "Code of Conduct", transparency: "Transparency Report", company: "Company", about: "About Bitly",
+    careers: "Careers", inclusion: "Inclusion at Bitly", partners: "Partners", press: "Press", contact: "Contact",
+    reviews: "Reviews", accessibilityReport: "Accessibility Report", accessibilityStatement: "Accessibility Statement",
+    copyright: "© 2026 Bitly | Handmade in New York City, Berlin, and all over the world."
   };
 
-  const t = translations[language];
+  const translations = {
+    en: baseEn,
+    de: baseEn,
+    fr: baseEn,
+    it: baseEn,
+    pt: baseEn,
+    es: baseEn,
+    th: baseEn,
+  };
+
+  const t = translations[language] || baseEn;
 
   const handleShorten = (e) => {
     e.preventDefault();
@@ -194,6 +196,90 @@ const Home = () => {
               <h3 className="text-xl font-bold text-white mb-2">{t.urlShortener}</h3>
               <p className="text-gray-400">{t.urlDesc}</p>
               <div className="mt-4 flex items-center text-sm text-blue-400">{t.learnMore} →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Trusted by brands */}
+      <div className="py-12 bg-gray-900/60 border-y border-gray-800">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-xs sm:text-sm uppercase tracking-[0.25em] text-gray-400 mb-6">
+            Trusted by teams of all sizes
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-8 text-gray-400 text-xs sm:text-sm font-medium opacity-80">
+            <span className="flex items-center justify-center">E‑commerce</span>
+            <span className="flex items-center justify-center">SaaS</span>
+            <span className="flex items-center justify-center">Agencies</span>
+            <span className="flex items-center justify-center">Creators</span>
+            <span className="flex items-center justify-center">Customer support</span>
+            <span className="flex items-center justify-center">Internal tools</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics strip */}
+      <div className="py-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            <div className="bg-gray-800/60 border border-gray-700 rounded-xl px-6 py-5">
+              <p className="text-3xl sm:text-4xl font-extrabold text-white">99.9%</p>
+              <p className="mt-1 text-sm text-gray-400">Platform uptime</p>
+            </div>
+            <div className="bg-gray-800/60 border border-gray-700 rounded-xl px-6 py-5">
+              <p className="text-3xl sm:text-4xl font-extrabold text-white">500M+</p>
+              <p className="mt-1 text-sm text-gray-400">Clicks tracked each month</p>
+            </div>
+            <div className="bg-gray-800/60 border border-gray-700 rounded-xl px-6 py-5">
+              <p className="text-3xl sm:text-4xl font-extrabold text-white">190+</p>
+              <p className="mt-1 text-sm text-gray-400">Countries with active links</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Use cases / value props */}
+      <div className="py-16 bg-gray-900/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-bold text-white mb-2">Built for modern teams</h2>
+            <p className="text-gray-400 text-sm sm:text-base">
+              Shortly gives marketers, developers, and operators a single place to manage every link, QR code, and landing page they ship.
+            </p>
+          </div>
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-2">For marketing teams</h3>
+              <p className="text-gray-400 text-sm mb-3">
+                Launch campaigns faster with branded links, QR codes on every asset, and analytics that tie engagement back to channels.
+              </p>
+              <ul className="text-gray-400 text-xs space-y-1">
+                <li>• Track performance by channel and campaign</li>
+                <li>• Standardize UTM parameters across your team</li>
+                <li>• Share dashboards with stakeholders in seconds</li>
+              </ul>
+            </div>
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-2">For developers & product</h3>
+              <p className="text-gray-400 text-sm mb-3">
+                Use a stable API to generate links programmatically, power in‑app sharing, and build custom workflows around your data.
+              </p>
+              <ul className="text-gray-400 text-xs space-y-1">
+                <li>• REST API for links, QR codes, and pages</li>
+                <li>• Webhooks for click and conversion events</li>
+                <li>• Secure by default with role‑based access</li>
+              </ul>
+            </div>
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-2">For operations & support</h3>
+              <p className="text-gray-400 text-sm mb-3">
+                Keep every customer‑facing link up‑to‑date, with change history and controls that make compliance and governance simple.
+              </p>
+              <ul className="text-gray-400 text-xs space-y-1">
+                <li>• Update destinations without breaking links</li>
+                <li>• Audit who changed what and when</li>
+                <li>• Centralize ownership of business‑critical URLs</li>
+              </ul>
             </div>
           </div>
         </div>
