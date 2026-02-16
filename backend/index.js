@@ -1,12 +1,13 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const { connectToMongoDB } = require("./connect");
 const urlRoute = require("./routes/url");
 const authRoute = require("./routes/auth");
 const URL = require("./models/url");
 
-const PORT = 8001;
+const PORT = process.env.PORT || 8001;
 const app = express();
 
 // Middleware
@@ -18,7 +19,7 @@ connectToMongoDB(process.env.MONGODB_URI || "mongodb://localhost:27017/urlShorte
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Routes
+// API Routes
 app.use("/url", urlRoute);
 app.use("/auth", authRoute);
 
@@ -37,6 +38,13 @@ app.get("/:shortId", async (req, res) => {
     console.error("Error in redirect route:", error);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// ✅ Serve frontend build files (Vite dist folder)
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 });
 
 // Start the server
