@@ -14,7 +14,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database connection (uses MONGODB_URI from .env, fallback to local)
+// Database connection
 connectToMongoDB(process.env.MONGODB_URI || "mongodb://localhost:27017/urlShortenerDB")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
@@ -33,17 +33,18 @@ app.get("/:shortId", async (req, res) => {
       return res.status(404).json({ error: "Short URL not found" });
     }
 
-    res.redirect(entry.redirectURL);
+    return res.redirect(entry.redirectURL);
   } catch (error) {
     console.error("Error in redirect route:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // ✅ Serve frontend build files (Vite dist folder)
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-app.get("*", (req, res) => {
+// ✅ React fallback route (Express 5 SAFE)
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 });
 
